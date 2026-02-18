@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DCP Framework: Full Pipeline Demo</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+      integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV"
+      crossorigin="anonymous"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+      integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+      integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      :root {
+        --primary: #2c3e50;
+        --accent: #3498db;
+        --highlight: #e74c3c;
+        --success: #27ae60;
+        --warning: #f39c12;
+        --bg: #f4f7f6;
+        --card: #ffffff;
+        --code-bg: #1e272e;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg);
+        color: var(--primary);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        margin-bottom: 5px;
+      }
+      .subtitle {
+        color: #7f8c8d;
+        margin-bottom: 20px;
+        font-style: italic;
+      }
+
+      /* Main Layout */
+      .container {
+        display: flex;
+        width: 100%;
+        max-width: 1300px;
+        height: 85vh;
+        gap: 20px;
+      }
+
+      /* Left Panel: The World & Model */
+      .left-panel {
+        flex: 1.2;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .world-view {
+        flex: 2;
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        border: 2px solid #ecf0f1;
+      }
+
+      .model-view {
+        flex: 1;
+        background: var(--card);
+        border-radius: 12px;
+        padding: 15px;
+        border: 2px solid #ecf0f1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+
+      /* Right Panel: The Logic & Ontology */
+      .right-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      /* Block World Styles */
+      .block-table {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 20px;
+        background: #95a5a6;
+        border-top: 4px solid #7f8c8d;
+      }
+
+      .block {
+        width: 50px;
+        height: 50px;
+        background: var(--accent);
+        border: 2px solid #2980b9;
+        border-radius: 4px;
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        color: white;
+        font-size: 20px;
+        transition: all 0.5s ease;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 10;
+      }
+
+      .block.ghost {
+        background: transparent;
+        border: 2px dashed #bdc3c7;
+        color: #bdc3c7;
+        z-index: 1;
+      }
+
+      .block.threat {
+        background: var(--highlight);
+        border-color: #c0392b;
+      }
+
+      /* Causal Link Arrow */
+      .causal-arrow {
+        position: absolute;
+        height: 3px;
+        background: var(--success);
+        transform-origin: 0 50%;
+        z-index: 5;
+        display: none;
+      }
+      .causal-label {
+        position: absolute;
+        background: var(--success);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: none;
+        z-index: 6;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Neural Model Visuals */
+      .neural-net {
+        width: 80%;
+        height: 60px;
+        background: linear-gradient(90deg, #34495e, #2c3e50);
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: monospace;
+        position: relative;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .neural-input,
+      .neural-output {
+        font-size: 12px;
+        color: #7f8c8d;
+        margin: 5px 0;
+        text-align: center;
+        width: 100%;
+      }
+
+      .prediction-box {
+        background: #ecf0f1;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: bold;
+        border: 2px solid #bdc3c7;
+        margin-top: 5px;
+        transition: all 0.3s;
+      }
+
+      .prediction-box.correct {
+        border-color: var(--success);
+        color: var(--success);
+        background: #e8f8f5;
+      }
+      .prediction-box.wrong {
+        border-color: var(--highlight);
+        color: var(--highlight);
+        background: #fdedec;
+      }
+
+      /* Text & Console */
+      .step-card {
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid var(--accent);
+        flex-grow: 0;
+      }
+
+      .console-container {
+        flex-grow: 1;
+        background: var(--code-bg);
+        border-radius: 8px;
+        padding: 15px;
+        overflow-y: auto;
+        font-family: "Consolas", "Monaco", monospace;
+        font-size: 13px;
+        color: #dcdde1;
+        border: 1px solid #353b48;
+      }
+
+      .log-line {
+        margin-bottom: 6px;
+        border-bottom: 1px solid #2f3640;
+        padding-bottom: 2px;
+      }
+      .log-query {
+        color: #00a8ff;
+      }
+      .log-success {
+        color: #4cd137;
+      }
+      .log-error {
+        color: #e84118;
+      }
+      .log-info {
+        color: #fbc531;
+      }
+
+      /* Explanation Box */
+      .explanation-box {
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 15px;
+        border-radius: 8px;
+        font-style: italic;
+        display: none;
+        margin-top: 10px;
+      }
+
+      /* Controls */
+      .controls {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 16px;
+        transition: background 0.2s;
+      }
+
+      .btn-next {
+        background: var(--accent);
+        color: white;
+      }
+      .btn-next:hover {
+        background: #2980b9;
+      }
+      .btn-prev {
+        background: #bdc3c7;
+        color: #2c3e50;
+      }
+      .btn-prev:hover {
+        background: #95a5a6;
+      }
+
+      .progress-dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #bdc3c7;
+      }
+      .dot.active {
+        background: var(--accent);
+      }
+
+      .step-separator {
+        border-bottom: 1px dashed #353b48;
+        margin: 15px 0;
+        opacity: 0.3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Domain-Consistent Probing (DCP)</h1>
+    <div class="subtitle">Sussman Anomaly Demonstration</div>
+
+    <div class="container">
+      <!-- Left Panel: Visuals -->
+      <div class="left-panel">
+        <!-- The Block World -->
+        <div class="world-view" id="world">
+          <div class="block-table"></div>
+          <!-- Blocks injected via JS -->
+          <div id="causal-arrow" class="causal-arrow"></div>
+          <div id="causal-label" class="causal-label"></div>
+        </div>
+
+        <!-- The Neural Model -->
+        <div class="model-view">
+          <div class="neural-input" id="neural-input">Input: State Embedding $\phi(s)$</div>
+          <div class="neural-net">
+            <span>Neural Transition Model $T_\theta$</span>
+          </div>
+          <div class="neural-output">Predicted Action:</div>
+          <div class="prediction-box" id="prediction-box">Waiting for Probe...</div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Logic & Logs -->
+      <div class="right-panel">
+        <div class="step-card">
+          <h2 id="step-title">Step 1: Setup</h2>
+          <p id="step-desc">Initializing the Sussman Anomaly...</p>
+          <div id="explanation-box" class="explanation-box"></div>
+        </div>
+
+        <div class="console-container" id="console">
+          <!-- Logs injected via JS -->
+        </div>
+
+        <div class="controls">
+          <button class="btn-prev" onclick="prevStep()">Back</button>
+          <div class="progress-dots" id="dots">
+            <!-- Dots injected via JS -->
+          </div>
+          <button class="btn-next" onclick="nextStep()">Next Step</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Configuration
+      const steps = [
+        {
+          title: "1. The Problem",
+          desc: "<strong>Sussman Anomaly:</strong> Goal is A on B, B on C. <br>Current State: C on A. B on Table.",
+          logs: [
+            { msg: "Initializing Domain: Blocksworld", type: "info" },
+            { msg: "State: { on(C,A), on(A,Table), on(B,Table) }", type: "normal" },
+          ],
+        },
+        {
+          title: "2. Reference Plan",
+          desc: "A symbolic planner generates a solution. We focus on a specific moment in the plan where <strong>Stack(A, B)</strong> is about to happen.",
+          logs: [
+            { msg: "Plan Step 3: State Reached.", type: "success" },
+            { msg: "Current State: { clear(A), clear(B), clear(C) }", type: "normal" },
+            { msg: "Next Planned Action: Stack(A, B)", type: "normal" },
+          ],
+        },
+        {
+          title: "3. Causal Link Extraction",
+          desc: "We extract <strong>Causal Links</strong> from the plan. <br>Why can we Stack A? Because a previous action cleared A.",
+          logs: [
+            { msg: "Extracting Causal Links...", type: "query" },
+            { msg: "Found Link: [Unstack(C,A)] produces [clear(A)] for [Stack(A,B)]", type: "success" },
+          ],
+        },
+        {
+          title: "4. Naive Perturbation",
+          desc: "To test if the model understands <em>why</em> A is clear, we try to negate <code>clear(A)</code> directly. <br><strong>Result:</strong> Invalid State.",
+          logs: [
+            { msg: "Perturbation Intent: Make clear(A) = False", type: "info" },
+            { msg: "Applying naive bit-flip...", type: "normal" },
+            { msg: "ERROR: State Invalid. Mutex Violation.", type: "error" },
+            { msg: "Reason: A cannot be 'not clear' without an object on it.", type: "normal" },
+          ],
+        },
+        {
+          title: "5. DCP Repair (Knowledge Graph)",
+          desc: "We use the <strong>Ontology & Mutexes</strong> to repair the state. <br>To make <code>not(clear(A))</code> valid, we must place an object on A.",
+          logs: [
+            { msg: "Querying Ontology for Repair...", type: "query" },
+            { msg: "SELECT ?repair WHERE { ?group type MutexGroup ... }", type: "normal" },
+            { msg: "Repair Found: Introduce Object D. Add on(D, A).", type: "success" },
+            { msg: "State is now Valid.", type: "success" },
+          ],
+        },
+        {
+          title: "6. Model Probing",
+          desc: "We feed the <strong>Perturbed State</strong> into the Neural Model. <br>If it truly understands physics, it should change its plan.",
+          logs: [
+            { msg: "Model Probe Complete.", type: "info" },
+            { msg: "Input: Perturbed State (Threatened Link)", type: "normal" },
+            { msg: "Output: Unstack(D, A)", type: "normal" },
+            { msg: "Observation: Model deviated from original plan correctly.", type: "success" },
+          ],
+        },
+        {
+          title: "7. CSI Calculation",
+          desc: "We calculate the <strong>Causal Sensitivity Index</strong> based on the model's reaction to the threat.",
+          logs: [
+            { msg: "Calculating Causal Sensitivity Index...", type: "info" },
+            { msg: "S(Threat) = 1 (Model changed prediction)", type: "normal" },
+            { msg: "S(Control) = 0 (Model stable on irrelevant changes)", type: "normal" },
+            { msg: "CSI = (1 - 0) / (1 + 0) = 1.0", type: "success" },
+          ],
+        },
+        {
+          title: "8. Explanation Generation",
+          desc: "Finally, we generate a <strong>Natural Language Explanation</strong> using the Ontology to describe the failure/success.",
+          logs: [
+            { msg: "Generating Natural Language Explanation...", type: "query" },
+            { msg: "Mapping CSI stats to Ontology Templates...", type: "info" },
+            { msg: "Explanation Rendered.", type: "success" },
+          ],
+        },
+      ];
+
+      let currentStep = 0;
+
+      // Block Positions
+      const pos = {
+        table_left: { left: "20%", bottom: "20px" },
+        table_mid: { left: "50%", bottom: "20px" },
+        table_right: { left: "80%", bottom: "20px" },
+        on_left: { left: "20%", bottom: "70px" },
+        on_mid: { left: "50%", bottom: "70px" },
+        on_right: { left: "80%", bottom: "70px" },
+        stack_3: { left: "20%", bottom: "120px" },
+      };
+
+      // Render Functions
+
+      function log(msg, type = "normal") {
+        const consoleDiv = document.getElementById("console");
+        const line = document.createElement("div");
+        line.className = "log-line";
+
+        if (type === "query") {
+          line.innerHTML = `<span class="log-query">SPARQL ></span> ${msg}`;
+        } else if (type === "success") {
+          line.innerHTML = `<span class="log-success">✔</span> ${msg}`;
+        } else if (type === "error") {
+          line.innerHTML = `<span class="log-error">✖</span> ${msg}`;
+        } else if (type === "info") {
+          line.innerHTML = `<span class="log-info">ℹ</span> ${msg}`;
+        } else {
+          line.innerText = msg;
+        }
+
+        consoleDiv.appendChild(line);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+      }
+
+      function clearWorld() {
+        document.querySelectorAll(".block").forEach((e) => e.remove());
+        document.getElementById("causal-arrow").style.display = "none";
+        document.getElementById("causal-label").style.display = "none";
+        document.getElementById("explanation-box").style.display = "none";
+      }
+
+      function createBlock(id, position, type = "") {
+        const b = document.createElement("div");
+        b.className = `block ${type}`;
+        b.innerText = id;
+        b.style.left = position.left;
+        b.style.bottom = position.bottom;
+        document.getElementById("world").appendChild(b);
+        return b;
+      }
+
+      function renderConsole(maxStep) {
+        const consoleDiv = document.getElementById("console");
+        consoleDiv.innerHTML = ""; // Clear current logs
+
+        for (let i = 0; i <= maxStep; i++) {
+          // Render logs for step i
+          if (steps[i].logs) {
+            steps[i].logs.forEach((logItem) => {
+              const line = document.createElement("div");
+              line.className = "log-line";
+              const msg = logItem.msg;
+              const type = logItem.type;
+
+              if (type === "query") {
+                line.innerHTML = `<span class="log-query">SPARQL ></span> ${msg}`;
+              } else if (type === "success") {
+                line.innerHTML = `<span class="log-success">✔</span> ${msg}`;
+              } else if (type === "error") {
+                line.innerHTML = `<span class="log-error">✖</span> ${msg}`;
+              } else if (type === "info") {
+                line.innerHTML = `<span class="log-info">ℹ</span> ${msg}`;
+              } else {
+                line.innerText = msg;
+              }
+
+              consoleDiv.appendChild(line);
+            });
+          }
+
+          // Add separator if not the last step
+          if (i < maxStep) {
+            const sep = document.createElement("div");
+            sep.className = "step-separator";
+            consoleDiv.appendChild(sep);
+          }
+        }
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+      }
+
+      function renderStep(stepIndex) {
+        clearWorld();
+        const predBox = document.getElementById("prediction-box");
+        const neuralInput = document.getElementById("neural-input");
+
+        // Reset UI elements
+        predBox.className = "prediction-box";
+        predBox.innerText = "Waiting for Probe...";
+        neuralInput.innerText = "Input: State Embedding";
+
+        // Render Console History
+        renderConsole(stepIndex);
+
+        // 1. Problem Setup
+        if (stepIndex === 0) {
+          createBlock("A", pos.table_left);
+          createBlock("C", pos.on_left);
+          createBlock("B", pos.table_mid);
+        }
+
+        // 2. Reference Plan
+        if (stepIndex === 1) {
+          // State: A is clear, B is clear, C is on table
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+          predBox.innerText = "Original Plan: Stack(A, B)";
+        }
+
+        // 3. Causal Links
+        if (stepIndex === 2) {
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+
+          // Draw Arrow
+          const arrow = document.getElementById("causal-arrow");
+          const label = document.getElementById("causal-label");
+          arrow.style.display = "block";
+          arrow.style.width = "60px";
+          arrow.style.left = "22%";
+          arrow.style.bottom = "80px";
+          arrow.style.transform = "rotate(90deg)";
+
+          label.style.display = "block";
+          label.style.left = "18%";
+          label.style.bottom = "100px";
+          label.innerText = "Link: clear(A)";
+        }
+
+        // 4. Naive Perturbation
+        if (stepIndex === 3) {
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+
+          // Ghost block to represent "Not Clear" but no object
+          createBlock("?", pos.on_left, "ghost");
+        }
+
+        // 5. DCP Repair
+        if (stepIndex === 4) {
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+          createBlock("D", pos.on_left, "threat"); // The Threat
+        }
+
+        // 6. Probing
+        if (stepIndex === 5) {
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+          createBlock("D", pos.on_left, "threat");
+
+          neuralInput.innerText = "Input: State { on(D,A), ... }";
+          predBox.innerText = "Processing...";
+
+          // Animation for the box only (logs are already rendered by renderConsole)
+          setTimeout(() => {
+            predBox.innerText = "Predicted: Unstack(D, A)";
+            predBox.classList.add("correct");
+          }, 500);
+        }
+
+        // 7. CSI Calculation
+        if (stepIndex === 6) {
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+          createBlock("D", pos.on_left, "threat");
+
+          predBox.innerText = "CSI: 1.0 (High)";
+          predBox.classList.add("correct");
+        }
+
+        // 8. Explanation
+        if (stepIndex === 7) {
+          createBlock("A", pos.table_left);
+          createBlock("B", pos.table_mid);
+          createBlock("C", pos.table_right);
+          createBlock("D", pos.on_left, "threat");
+
+          const expBox = document.getElementById("explanation-box");
+          expBox.style.display = "block";
+          expBox.innerHTML = `
+                    <strong>Generated Explanation:</strong><br>
+                    "At step 3, the model correctly responded to a threat on the causal link supporting <code>clear(A)</code>. 
+                    When <code>clear(A)</code> was negated by placing Block D on A, the model correctly switched its prediction 
+                    from <code>Stack(A,B)</code> to <code>Unstack(D,A)</code>, indicating robust causal learning."
+                `;
+        }
+
+        // Update Text
+        document.getElementById("step-title").innerText = steps[stepIndex].title;
+        document.getElementById("step-desc").innerHTML = steps[stepIndex].desc;
+
+        // Update Dots
+        const dotsContainer = document.getElementById("dots");
+        dotsContainer.innerHTML = "";
+        steps.forEach((_, i) => {
+          const dot = document.createElement("div");
+          dot.className = `dot ${i === stepIndex ? "active" : ""}`;
+          dotsContainer.appendChild(dot);
+        });
+      }
+
+      // Navigation
+      function nextStep() {
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          renderStep(currentStep);
+        }
+      }
+
+      function prevStep() {
+        if (currentStep > 0) {
+          currentStep--;
+          renderStep(currentStep);
+        }
+      }
+
+      // Init
+      renderStep(0);
+
+      // Render KaTeX math
+      document.addEventListener("DOMContentLoaded", function () {
+        renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+          ],
+          throwOnError: false,
+        });
+      });
+    </script>
+  </body>
+</html>
